@@ -64,6 +64,7 @@ func (s *DiskStats) Gather(acc plugins.Accumulator) error {
 
 type DiskIOStats struct {
 	ps PS
+	Device []string
 }
 
 func (_ *DiskIOStats) Description() string {
@@ -78,7 +79,21 @@ func (s *DiskIOStats) Gather(acc plugins.Accumulator) error {
 		return fmt.Errorf("error getting disk io info: %s", err)
 	}
 
+	limitDevices := s.Device != nil;
+	isEnabled := map[string]bool{}
+
+	if limitDevices {
+		for _, l := range s.Device{
+			isEnabled[l] = true
+		}
+	}
+
 	for _, io := range diskio {
+
+		if limitDevices && !isEnabled[io.Name]{
+			continue
+		}
+
 		tags := map[string]string{}
 		if len(io.Name) != 0 {
 			tags["name"] = io.Name
